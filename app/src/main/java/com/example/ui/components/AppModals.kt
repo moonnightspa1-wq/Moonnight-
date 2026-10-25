@@ -543,7 +543,7 @@ fun WriteReviewDialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Privacy Note: Your phone number is masked (e.g. +91 98****1234)",
+                        text = "Privacy Note: Your phone number is masked (e.g. +91 98XXX XXXXX)",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = ChampagneGold,
                             fontSize = 10.5.sp

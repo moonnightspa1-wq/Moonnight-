@@ -82,7 +82,7 @@ fun PartnerScreen(
     var ageStr by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
     var expYearsStr by remember { mutableStateOf("") }
-    var specialty by remember { mutableStateOf("Swedish & Deep Tissue Massage") }
+    var specialty by remember { mutableStateOf("") }
     var photoSelected by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -282,7 +282,7 @@ fun PartnerScreen(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        placeholder = { Text("e.g. Priya Sharma", color = MutedText, fontSize = 13.sp) },
+                        placeholder = { Text("Enter full legal name", color = MutedText, fontSize = 13.sp) },
                         modifier = Modifier.fillMaxWidth().testTag("partner_name_input"),
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -309,7 +309,7 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = phone,
                                 onValueChange = { phone = it },
-                                placeholder = { Text("+91 98765 43210", color = MutedText, fontSize = 13.sp) },
+                                placeholder = { Text("Enter 10-digit mobile #", color = MutedText, fontSize = 13.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_phone_input"),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -330,7 +330,7 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = ageStr,
                                 onValueChange = { if (it.length <= 2 && it.all { c -> c.isDigit() }) ageStr = it },
-                                placeholder = { Text("26", color = MutedText, fontSize = 13.sp) },
+                                placeholder = { Text("Age (18+)", color = MutedText, fontSize = 13.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_age_input"),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -380,7 +380,7 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = specialty,
                                 onValueChange = { specialty = it },
-                                placeholder = { Text("e.g. Ayurvedic / Deep Tissue", color = MutedText, fontSize = 12.sp) },
+                                placeholder = { Text("Select/Type specialty", color = MutedText, fontSize = 12.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_specialty_input"),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(

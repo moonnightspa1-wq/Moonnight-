@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -125,6 +126,7 @@ fun ServicesScreen(
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ServiceDetailCard(
     service: SpaService,
@@ -211,10 +213,11 @@ fun ServiceDetailCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Key Benefits Tags
-            Row(
+            // Key Benefits Tags with horizontal wrapping (no clipping)
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 service.benefits.forEach { b ->
                     Surface(
@@ -225,10 +228,10 @@ fun ServiceDetailCard(
                         Text(
                             text = "✓ $b",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.5.sp,
+                                fontSize = 10.5.sp,
                                 color = LightGrayText
                             ),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
                 }

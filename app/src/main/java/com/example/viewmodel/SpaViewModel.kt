@@ -59,15 +59,15 @@ class SpaViewModel(application: Application) : AndroidViewModel(application) {
     private val _urgentSlotsRemaining = MutableStateFlow(3)
     val urgentSlotsRemaining: StateFlow<Int> = _urgentSlotsRemaining.asStateFlow()
 
-    // User Session (Defaults to pre-filled luxury guest, can log in / edit profile)
+    // User Session (Fresh launch requires 6-digit OTP verification)
     private val _userSession = MutableStateFlow(
         UserSession(
-            name = "Rhea Kapoor",
-            phone = "+91 98201 44556",
-            email = "rhea.kapoor@luxuryspa.in",
-            address = "Penthouse 14B, Palm Grove Residency, Marine Drive",
+            name = "",
+            phone = "",
+            email = "",
+            address = "",
             isVip = false,
-            isLoggedIn = true,
+            isLoggedIn = false,
             referralCode = "MOON399"
         )
     )
@@ -243,6 +243,33 @@ class SpaViewModel(application: Application) : AndroidViewModel(application) {
         showSnackbar("👑 Congratulations! You are now a Moonnight V.I.P Elite Member!")
     }
 
+    fun verifyAndLoginWithOtp(name: String, phone: String, otp: String): Boolean {
+        if (otp.length == 6 && otp.all { it.isDigit() }) {
+            val formattedPhone = if (phone.startsWith("+91")) phone else "+91 $phone"
+            _userSession.value = _userSession.value.copy(
+                name = name.ifBlank { "Guest User" },
+                phone = formattedPhone,
+                isLoggedIn = true
+            )
+            showSnackbar("✨ Welcome to Moonnight, ${name.ifBlank { "Guest" }}!")
+            return true
+        }
+        return false
+    }
+
+    fun logout() {
+        _userSession.value = UserSession(
+            name = "",
+            phone = "",
+            email = "",
+            address = "",
+            isVip = false,
+            isLoggedIn = false,
+            referralCode = "MOON399"
+        )
+        showSnackbar("Logged out successfully.")
+    }
+
     fun loginOrUpdateProfile(name: String, phone: String, email: String, address: String) {
         _userSession.value = _userSession.value.copy(
             name = name,
@@ -257,13 +284,7 @@ class SpaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun submitReview(rating: Int, serviceName: String, comment: String) {
         val session = _userSession.value
-        val masked = if (session.phone.length >= 10) {
-            val start = session.phone.take(6)
-            val end = session.phone.takeLast(4)
-            "$start****$end"
-        } else {
-            "+91 98****1234"
-        }
+        val masked = SpaDataDefaults.formatMaskedPhone(session.phone)
         val review = CustomerReview(
             id = "rev_" + System.currentTimeMillis(),
             customerName = session.name.ifBlank { "Verified Guest" },

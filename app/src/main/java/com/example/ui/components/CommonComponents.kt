@@ -18,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -361,6 +362,7 @@ fun FreeMaskBanner(
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun InHomeServiceCard(
     modifier: Modifier = Modifier
@@ -424,9 +426,10 @@ fun InHomeServiceCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 InHomePill("🛋️ Foldable Spa Bed")
                 InHomePill("🧴 Organic Warm Oils")
@@ -558,7 +561,7 @@ fun HygienePrivacySection(
             HygieneBullet(
                 icon = Icons.Default.Lock,
                 title = "100% Customer Data Privacy Guarantee",
-                desc = "Phone numbers are masked (+91 98****1234) for private communication."
+                desc = "Phone numbers are masked (+91 98XXX XXXXX) for private communication."
             )
         }
     }

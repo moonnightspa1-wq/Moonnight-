@@ -63,6 +63,7 @@ import com.example.ui.theme.PlumSurface
 import com.example.ui.theme.RosePinkPrimary
 import com.example.ui.theme.SoftPinkContainer
 import com.example.ui.theme.SoftWhite
+import com.example.ui.theme.UrgentCoral
 import com.example.ui.theme.VerifiedGreen
 import com.example.ui.theme.WineDark
 
@@ -72,6 +73,7 @@ fun ProfileScreen(
     onEditProfile: () -> Unit,
     onUpgradeVip: () -> Unit,
     onCopyReferral: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -253,6 +255,22 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        item {
+            OutlinedButton(
+                onClick = onLogout,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = UrgentCoral),
+                border = BorderStroke(1.dp, UrgentCoral.copy(alpha = 0.6f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("logout_btn")
+            ) {
+                Text("Log Out / Change Account", fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

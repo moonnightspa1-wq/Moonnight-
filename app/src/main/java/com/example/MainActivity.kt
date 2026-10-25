@@ -33,6 +33,7 @@ import com.example.ui.components.MoonnightBottomNav
 import com.example.ui.components.MoonnightTopBar
 import com.example.ui.components.VipUpgradeDialog
 import com.example.ui.components.WriteReviewDialog
+import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.BookingsScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.PartnerScreen
@@ -80,6 +81,16 @@ fun MoonnightApp(viewModel: SpaViewModel) {
             snackbarHostState.showSnackbar(msg)
             viewModel.clearSnackbar()
         }
+    }
+
+    // Authentication Gate: Require phone & 6-digit OTP verification on fresh app startup
+    if (!userSession.isLoggedIn) {
+        AuthScreen(
+            onAuthenticated = { name, phone, otp ->
+                viewModel.verifyAndLoginWithOtp(name, phone, otp)
+            }
+        )
+        return
     }
 
     // BackHandler per guidelines: pop back to Home if in another tab
@@ -177,7 +188,8 @@ fun MoonnightApp(viewModel: SpaViewModel) {
                                 onUpgradeVip = { viewModel.setShowVipModal(true) },
                                 onCopyReferral = {
                                     viewModel.showSnackbar("Copied referral link: https://moonnight.spa/invite?code=${userSession.referralCode}")
-                                }
+                                },
+                                onLogout = { viewModel.logout() }
                             )
                         }
                     }
