@@ -23,7 +23,7 @@ abstract class SpaDatabase : RoomDatabase() {
                     context.applicationContext,
                     SpaDatabase::class.java,
                     "moonnight_spa.db"
-                ).fallbackToDestructiveMigration().build()
+                ).fallbackToDestructiveMigration(dropAllTables = true).build()
                 INSTANCE = instance
                 instance
             }

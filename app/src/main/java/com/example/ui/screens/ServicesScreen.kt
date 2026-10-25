@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -114,7 +115,7 @@ fun ServicesScreen(
             }
         }
 
-        items(services) { service ->
+        items(services, key = { it.id }) { service ->
             ServiceDetailCard(
                 service = service,
                 selectedDuration = selectedDuration,
@@ -126,7 +127,7 @@ fun ServicesScreen(
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ServiceDetailCard(
     service: SpaService,
@@ -213,7 +214,8 @@ fun ServiceDetailCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Key Benefits Tags with horizontal wrapping (no clipping)
+            // Key Benefits Tags
+            // FlowRow: three long benefit chips in a plain Row get squashed/clipped on narrow screens.
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -228,10 +230,10 @@ fun ServiceDetailCard(
                         Text(
                             text = "✓ $b",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.5.sp,
+                                fontSize = 9.5.sp,
                                 color = LightGrayText
                             ),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
                     }
                 }
@@ -254,10 +256,9 @@ fun ServiceDetailCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                SpaDuration.values().forEach { dur ->
+                SpaDuration.entries.forEach { dur ->
                     val isCurrentSelected = dur == selectedDuration
-                    val basePrice = service.getPrice(dur)
-                    val price = if (isVip) (basePrice * 0.8).toInt() else basePrice
+                    val price = service.getPrice(dur, isVip)
 
                     Surface(
                         modifier = Modifier

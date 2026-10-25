@@ -23,7 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Spa
@@ -96,6 +96,8 @@ fun HomeScreen(
     onWriteReview: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val averageRating: Double? = if (reviews.isEmpty()) null else reviews.map { it.rating }.average()
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -234,7 +236,7 @@ fun HomeScreen(
                     }
 
                     Text(
-                        text = "View All (9)",
+                        text = "View All (${services.size})",
                         style = MaterialTheme.typography.labelMedium.copy(
                             color = RosePinkPrimary,
                             fontWeight = FontWeight.Bold
@@ -254,7 +256,7 @@ fun HomeScreen(
         }
 
         // 6. Featured Services List
-        items(services.take(4)) { service ->
+        items(services.take(4), key = { it.id }) { service ->
             HomeServiceItem(
                 service = service,
                 selectedDuration = selectedDuration,
@@ -307,28 +309,31 @@ fun HomeScreen(
                                 )
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                color = VerifiedGreen.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Real average of the reviews shown below (was a hard-coded "4.9").
+                            if (averageRating != null) {
+                                Surface(
+                                    color = VerifiedGreen.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Verified,
-                                        contentDescription = null,
-                                        tint = VerifiedGreen,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text(
-                                        text = "4.9 ★",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = VerifiedGreen,
-                                            fontWeight = FontWeight.Bold
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Verified,
+                                            contentDescription = null,
+                                            tint = VerifiedGreen,
+                                            modifier = Modifier.size(13.dp)
                                         )
-                                    )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            text = String.format(java.util.Locale.US, "%.1f ★", averageRating),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = VerifiedGreen,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -358,12 +363,13 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
 
-                reviews.forEach { rev ->
-                    ReviewCard(review = rev)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+        // Reviews are real lazy items now (they used to be composed all at once inside one item).
+        items(reviews, key = { it.id }) { rev ->
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                ReviewCard(review = rev)
             }
         }
 
@@ -387,8 +393,7 @@ fun HomeServiceItem(
     onBookClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val basePrice = service.getPrice(selectedDuration)
-    val displayPrice = if (isVip) (basePrice * 0.8).toInt() else basePrice
+    val displayPrice = service.getPrice(selectedDuration, isVip)
 
     Card(
         modifier = modifier

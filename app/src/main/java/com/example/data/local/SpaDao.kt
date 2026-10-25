@@ -23,6 +23,10 @@ interface SpaDao {
     @Query("UPDATE bookings SET status = :status WHERE id = :id")
     suspend fun updateBookingStatus(id: String, status: String)
 
+    /** Only a still-confirmed booking can be cancelled. Returns the number of rows changed (0 or 1). */
+    @Query("UPDATE bookings SET status = 'CANCELLED' WHERE id = :id AND status = 'CONFIRMED'")
+    suspend fun cancelConfirmedBooking(id: String): Int
+
     @Query("DELETE FROM bookings WHERE id = :id")
     suspend fun deleteBooking(id: String)
 

@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import com.example.util.SpaUtils
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -71,13 +73,10 @@ import com.example.ui.theme.PlumSurface
 import com.example.ui.theme.RosePinkPrimary
 import com.example.ui.theme.SoftPinkContainer
 import com.example.ui.theme.SoftWhite
+import com.example.ui.theme.UrgentCoral
 import com.example.ui.theme.VerifiedGreen
 import com.example.ui.theme.WineDark
 import com.example.viewmodel.BookingDraft
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun BookingDialog(
@@ -88,27 +87,20 @@ fun BookingDialog(
     onConfirm: () -> Unit
 ) {
     val service = draft.service ?: return
-    var addressInput by remember(draft.address) { mutableStateOf(draft.address) }
-    var notesInput by remember(draft.specialNotes) { mutableStateOf(draft.specialNotes) }
+    // Local text state must NOT be keyed on the draft values: the draft updates a frame later than
+    // the keystroke, and re-keying would reset the field and can drop characters when typing fast.
+    var addressInput by remember { mutableStateOf(draft.address) }
+    var notesInput by remember { mutableStateOf(draft.specialNotes) }
 
     val basePrice = service.getPrice(draft.duration)
     val isVip = userSession.isVip
-    val finalPrice = if (isVip) (basePrice * 0.8).toInt() else basePrice
+    val finalPrice = service.getPrice(draft.duration, isVip)
 
-    val todayStr = remember {
-        "Today, " + SimpleDateFormat("MMM d", Locale.getDefault()).format(Date())
-    }
-    val tomorrowStr = remember {
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.DAY_OF_YEAR, 1)
-        "Tomorrow, " + SimpleDateFormat("MMM d", Locale.getDefault()).format(cal.time)
-    }
-    val dayAfterStr = remember {
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.DAY_OF_YEAR, 2)
-        SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(cal.time)
-    }
-    val availableDates = listOf(todayStr, tomorrowStr, dayAfterStr)
+    val todayStr = SpaUtils.dateLabel(0)
+    val todayHasSlots = SpaUtils.firstAvailableSlot(SpaDataDefaults.timeSlots, true) != null
+    // Don't offer "Today" once every slot for today has already passed.
+    val availableDates = (if (todayHasSlots) listOf(0, 1, 2) else listOf(1, 2)).map { SpaUtils.dateLabel(it) }
+    val isTodaySelected = draft.date == todayStr
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -208,7 +200,7 @@ fun BookingDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    SpaDuration.values().forEach { d ->
+                    SpaDuration.entries.forEach { d ->
                         val isSelected = d == draft.duration
                         val price = service.getPrice(d)
                         Surface(
@@ -319,11 +311,13 @@ fun BookingDialog(
                         ) {
                             rowSlots.forEach { slot ->
                                 val isSel = draft.timeSlot == slot
+                                val slotEnabled = SpaUtils.isSlotAvailable(slot, isTodaySelected)
                                 Surface(
                                     modifier = Modifier
                                         .weight(1f)
+                                        .alpha(if (slotEnabled) 1f else 0.35f)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .clickable { onUpdateDraft(null, null, slot, null, null) }
+                                        .clickable(enabled = slotEnabled) { onUpdateDraft(null, null, slot, null, null) }
                                         .testTag("time_slot_$slot"),
                                     color = if (isSel) RosePinkPrimary else PlumCard,
                                     border = BorderStroke(1.dp, if (isSel) BlushPinkAccent else PlumBorder),
@@ -510,6 +504,18 @@ fun BookingDialog(
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))
+
+                if (draft.error != null) {
+                    Text(
+                        text = draft.error,
+                        color = UrgentCoral,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                            .testTag("booking_error_text")
+                    )
+                }
 
                 // Instant Confirm Button
                 Button(

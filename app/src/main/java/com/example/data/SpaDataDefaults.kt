@@ -107,22 +107,11 @@ object SpaDataDefaults {
         )
     )
 
-    fun formatMaskedPhone(phone: String): String {
-        val digits = phone.filter { it.isDigit() }
-        val last10 = if (digits.length >= 10) digits.takeLast(10) else digits
-        return if (last10.length >= 4) {
-            val series = last10.take(4)
-            "+91 ${series}X XXXXX"
-        } else {
-            "+91 9820X XXXXX"
-        }
-    }
-
     val sampleReviews = listOf(
         CustomerReview(
             id = "rev_1",
             customerName = "Pooja Sharma",
-            maskedPhone = "+91 9820X XXXXX",
+            maskedPhone = "+91 98****1234",
             rating = 5,
             serviceName = "Swedish Massage (60 Min)",
             comment = "Therapist Priya arrived punctually with a sanitized massage bed, warm lavender oil, and soft music. The complimentary rose face mask was heavenly! Felt like a 7-star resort inside my own bedroom.",
@@ -132,7 +121,7 @@ object SpaDataDefaults {
         CustomerReview(
             id = "rev_2",
             customerName = "Ananya Desai",
-            maskedPhone = "+91 9718X XXXXX",
+            maskedPhone = "+91 97****5678",
             rating = 5,
             serviceName = "Aromatherapy (90 Min)",
             comment = "Absolute bliss! Verified female therapist, pristine hygiene kit, and she wore a fresh mask and sanitized everything before stepping in. 10/10 comfort and privacy.",
@@ -142,7 +131,7 @@ object SpaDataDefaults {
         CustomerReview(
             id = "rev_3",
             customerName = "Rituja Sen",
-            maskedPhone = "+91 9934X XXXXX",
+            maskedPhone = "+91 99****8901",
             rating = 5,
             serviceName = "Hot Stone Therapy (60 Min)",
             comment = "The hot stones melted my upper back knots completely. Moonnight is my go-to luxury weekend ritual now. Highly recommend the VIP membership!",
@@ -152,7 +141,7 @@ object SpaDataDefaults {
         CustomerReview(
             id = "rev_4",
             customerName = "Meera Kapoor",
-            maskedPhone = "+91 9650X XXXXX",
+            maskedPhone = "+91 96****4321",
             rating = 5,
             serviceName = "Balinese Massage (60 Min)",
             comment = "Super respectful, calm demeanor, and completely professional. My mother and I both booked back-to-back sessions. The free face mask was a delightful surprise.",

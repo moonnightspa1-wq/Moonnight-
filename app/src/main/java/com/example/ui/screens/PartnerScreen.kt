@@ -1,5 +1,11 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.util.SpaUtils
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -82,8 +88,16 @@ fun PartnerScreen(
     var ageStr by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
     var expYearsStr by remember { mutableStateOf("") }
-    var specialty by remember { mutableStateOf("") }
-    var photoSelected by remember { mutableStateOf(false) }
+    var specialty by remember { mutableStateOf("Swedish & Deep Tissue Massage") }
+    // Real photo picker (the previous version just toggled a fake "attached" flag and saved a
+    // made-up content:// URI, so no photo was ever actually chosen).
+    var photoUri by remember { mutableStateOf<String?>(null) }
+    val photoSelected = photoUri != null
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) photoUri = uri.toString()
+    }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
@@ -227,7 +241,11 @@ fun PartnerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { photoSelected = !photoSelected }
+                            .clickable {
+                                photoPicker.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
                             .testTag("partner_photo_upload_placeholder"),
                         color = PlumSurface,
                         border = BorderStroke(
@@ -257,7 +275,7 @@ fun PartnerScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = if (photoSelected) "Photo Attached: therapist_portrait.jpg" else "Tap to Select Profile Photo",
+                                    text = if (photoSelected) "Photo selected (tap to change)" else "Tap to Select Profile Photo",
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (photoSelected) VerifiedGreen else SoftWhite
@@ -282,7 +300,7 @@ fun PartnerScreen(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        placeholder = { Text("Enter full legal name", color = MutedText, fontSize = 13.sp) },
+                        placeholder = { Text("e.g. Priya Sharma", color = MutedText, fontSize = 13.sp) },
                         modifier = Modifier.fillMaxWidth().testTag("partner_name_input"),
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -309,7 +327,8 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = phone,
                                 onValueChange = { phone = it },
-                                placeholder = { Text("Enter 10-digit mobile #", color = MutedText, fontSize = 13.sp) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                placeholder = { Text("+91 98765 43210", color = MutedText, fontSize = 13.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_phone_input"),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -330,7 +349,8 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = ageStr,
                                 onValueChange = { if (it.length <= 2 && it.all { c -> c.isDigit() }) ageStr = it },
-                                placeholder = { Text("Age (18+)", color = MutedText, fontSize = 13.sp) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                placeholder = { Text("26", color = MutedText, fontSize = 13.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_age_input"),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -359,6 +379,7 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = expYearsStr,
                                 onValueChange = { if (it.length <= 2 && it.all { c -> c.isDigit() }) expYearsStr = it },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 placeholder = { Text("Years (e.g. 4)", color = MutedText, fontSize = 12.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_exp_input"),
                                 shape = RoundedCornerShape(10.dp),
@@ -380,7 +401,7 @@ fun PartnerScreen(
                             OutlinedTextField(
                                 value = specialty,
                                 onValueChange = { specialty = it },
-                                placeholder = { Text("Select/Type specialty", color = MutedText, fontSize = 12.sp) },
+                                placeholder = { Text("e.g. Ayurvedic / Deep Tissue", color = MutedText, fontSize = 12.sp) },
                                 modifier = Modifier.fillMaxWidth().testTag("partner_specialty_input"),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -430,8 +451,12 @@ fun PartnerScreen(
                         onClick = {
                             val age = ageStr.toIntOrNull() ?: 0
                             val exp = expYearsStr.toIntOrNull() ?: 0
-                            if (name.isBlank() || phone.isBlank() || age < 18) {
-                                errorMessage = "Please enter valid legal name, phone number, and age (18+)."
+                            if (name.isBlank() || !SpaUtils.isValidPhone(phone) || age < 18) {
+                                errorMessage = "Please enter your legal name, a valid 10-digit phone number, and age (18+)."
+                            } else if (expYearsStr.isBlank() || specialty.isBlank()) {
+                                errorMessage = "Please enter your years of experience and primary specialty."
+                            } else if (photoUri == null) {
+                                errorMessage = "Please add a profile photo."
                             } else {
                                 errorMessage = null
                                 onSubmitApplication(
@@ -441,14 +466,14 @@ fun PartnerScreen(
                                     bio.ifBlank { "Certified female therapist with $exp years spa experience." },
                                     exp,
                                     specialty.trim(),
-                                    if (photoSelected) "content://photos/therapist_avatar.jpg" else null
+                                    photoUri
                                 )
                                 name = ""
                                 phone = ""
                                 ageStr = ""
                                 bio = ""
                                 expYearsStr = ""
-                                photoSelected = false
+                                photoUri = null
                             }
                         },
                         colors = ButtonDefaults.buttonColors(

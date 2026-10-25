@@ -89,7 +89,7 @@ fun BookingsScreen(
             },
             text = {
                 Text(
-                    text = "Are you sure you want to cancel your appointment for ${bookingToCancel!!.serviceTitle} on ${bookingToCancel!!.date}? Full refund will be automatically credited to your original payment method.",
+                    text = "Are you sure you want to cancel your appointment for ${bookingToCancel!!.serviceTitle} on ${bookingToCancel!!.date}? No advance payment was taken, so you won't be charged.",
                     style = MaterialTheme.typography.bodyMedium.copy(color = LightGrayText)
                 )
             },
@@ -216,7 +216,7 @@ fun BookingsScreen(
                 }
             }
         } else {
-            items(bookings) { booking ->
+            items(bookings, key = { it.id }) { booking ->
                 BookingCard(
                     booking = booking,
                     onCancelClick = { bookingToCancel = booking }
@@ -411,8 +411,9 @@ fun BookingCard(
                 }
             }
 
-            // Cancel action if not cancelled
-            if (!isCancelled) {
+            // Only a still-confirmed booking can be cancelled ("free cancellation before the
+            // therapist departs"); it used to be offered for every non-cancelled status.
+            if (booking.status == BookingStatus.CONFIRMED) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),

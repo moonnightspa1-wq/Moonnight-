@@ -1,5 +1,12 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -18,7 +25,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -107,6 +113,11 @@ fun MoonnightTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                // Scaffold does not add status-bar insets for a custom top bar; without this the
+                // logo and VIP badge are drawn underneath the system clock/notch.
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                )
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -273,7 +284,7 @@ fun UrgentSlotsWidget(
                         )
                     }
                     Text(
-                        text = "Hurry! Only $slotsRemaining slots left for today! Book now.",
+                        text = "Hurry! Only $slotsRemaining ${if (slotsRemaining == 1) "slot" else "slots"} left for today! Book now.",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             color = SoftWhite
@@ -362,7 +373,7 @@ fun FreeMaskBanner(
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InHomeServiceCard(
     modifier: Modifier = Modifier
@@ -426,6 +437,7 @@ fun InHomeServiceCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // FlowRow so the three pills wrap on narrow phones instead of being squashed/clipped.
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -469,7 +481,7 @@ fun DurationSelectorRow(
             .testTag("duration_selector_row"),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        SpaDuration.values().forEach { duration ->
+        SpaDuration.entries.forEach { duration ->
             val isSelected = duration == selectedDuration
             Surface(
                 modifier = Modifier
@@ -561,7 +573,7 @@ fun HygienePrivacySection(
             HygieneBullet(
                 icon = Icons.Default.Lock,
                 title = "100% Customer Data Privacy Guarantee",
-                desc = "Phone numbers are masked (+91 98XXX XXXXX) for private communication."
+                desc = "Phone numbers are masked (+91 98****1234) for private communication."
             )
         }
     }

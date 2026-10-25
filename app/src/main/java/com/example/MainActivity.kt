@@ -1,5 +1,7 @@
 package com.example
 
+import androidx.activity.SystemBarStyle
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -25,10 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
-import androidx.credentials.CredentialManager
-import com.example.ui.components.signOut
 import com.example.model.AppNavTab
 import com.example.ui.components.BookingConfirmationDialog
 import com.example.ui.components.BookingDialog
@@ -37,7 +35,6 @@ import com.example.ui.components.MoonnightBottomNav
 import com.example.ui.components.MoonnightTopBar
 import com.example.ui.components.VipUpgradeDialog
 import com.example.ui.components.WriteReviewDialog
-import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.BookingsScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.PartnerScreen
@@ -53,7 +50,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // The app is always dark. With the default (auto) style, phones in light mode get dark
+        // status-bar icons on our dark plum background, making the clock/battery unreadable.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
+        )
         setContent {
             MoonnightTheme {
                 MoonnightApp(viewModel = viewModel)
@@ -78,9 +80,6 @@ fun MoonnightApp(viewModel: SpaViewModel) {
     val showLoginModal by viewModel.showLoginModal.collectAsStateWithLifecycle()
     val showReviewModal by viewModel.showReviewModal.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val credentialManager = remember { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(snackbarMessage) {
@@ -88,19 +87,6 @@ fun MoonnightApp(viewModel: SpaViewModel) {
             snackbarHostState.showSnackbar(msg)
             viewModel.clearSnackbar()
         }
-    }
-
-    // Authentication Gate: Require authentication on fresh app startup
-    if (!userSession.isLoggedIn) {
-        AuthScreen(
-            onGoogleAuthenticated = { user ->
-                viewModel.onGoogleSignInSuccess(user)
-            },
-            onAuthenticated = { name, phone, otp ->
-                viewModel.verifyAndLoginWithOtp(name, phone, otp)
-            }
-        )
-        return
     }
 
     // BackHandler per guidelines: pop back to Home if in another tab
@@ -116,10 +102,12 @@ fun MoonnightApp(viewModel: SpaViewModel) {
             .background(PlumBackground),
         contentAlignment = Alignment.Center
     ) {
+        // widthIn must come BEFORE fillMaxSize, otherwise fillMaxSize pins the width first and the
+        // 600dp cap has no effect on tablets / landscape.
         Box(
             modifier = Modifier
-                .fillMaxSize()
                 .widthIn(max = 600.dp)
+                .fillMaxSize()
         ) {
             Scaffold(
                 contentWindowInsets = WindowInsets.safeDrawing,
@@ -198,14 +186,6 @@ fun MoonnightApp(viewModel: SpaViewModel) {
                                 onUpgradeVip = { viewModel.setShowVipModal(true) },
                                 onCopyReferral = {
                                     viewModel.showSnackbar("Copied referral link: https://moonnight.spa/invite?code=${userSession.referralCode}")
-                                },
-                                onLogout = {
-                                    signOut(
-                                        context = context,
-                                        credentialManager = credentialManager,
-                                        onSignOutComplete = { viewModel.logout() },
-                                        scope = coroutineScope
-                                    )
                                 }
                             )
                         }

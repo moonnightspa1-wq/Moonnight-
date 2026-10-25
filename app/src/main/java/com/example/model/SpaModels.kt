@@ -24,7 +24,15 @@ data class SpaService(
             SpaDuration.MIN_90 -> price90
         }
     }
+
+    /** Price after the VIP privilege discount (integer maths, no floating point rounding). */
+    fun getPrice(duration: SpaDuration, isVip: Boolean): Int {
+        val base = getPrice(duration)
+        return if (isVip) base * (100 - VIP_DISCOUNT_PERCENT) / 100 else base
+    }
 }
+
+const val VIP_DISCOUNT_PERCENT = 20
 
 enum class BookingStatus(val label: String) {
     CONFIRMED("Confirmed"),
@@ -77,7 +85,6 @@ data class CustomerReview(
 )
 
 data class UserSession(
-    val userId: String = "",
     val name: String = "",
     val phone: String = "",
     val email: String = "",

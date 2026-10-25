@@ -1,5 +1,10 @@
 package com.example.ui.components
 
+import com.example.util.SpaUtils
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -156,7 +161,8 @@ fun LoginProfileDialog(
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = { phone = it; error = null },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     placeholder = { Text("+91 98201 44556", color = MutedText, fontSize = 13.sp) },
                     modifier = Modifier.fillMaxWidth().testTag("login_phone_input"),
                     shape = RoundedCornerShape(10.dp),
@@ -180,7 +186,8 @@ fun LoginProfileDialog(
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = { email = it; error = null },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     placeholder = { Text("e.g. guest@moonnight.in", color = MutedText, fontSize = 13.sp) },
                     modifier = Modifier.fillMaxWidth().testTag("login_email_input"),
                     shape = RoundedCornerShape(10.dp),
@@ -234,6 +241,10 @@ fun LoginProfileDialog(
                     onClick = {
                         if (name.isBlank() || phone.isBlank()) {
                             error = "Please enter both your name and phone number."
+                        } else if (!SpaUtils.isValidPhone(phone)) {
+                            error = "Please enter a valid 10-digit mobile number."
+                        } else if (email.isNotBlank() && !SpaUtils.isValidEmail(email.trim())) {
+                            error = "Please enter a valid email address or leave it blank."
                         } else {
                             onSave(name.trim(), phone.trim(), email.trim(), address.trim())
                         }
@@ -407,6 +418,7 @@ private fun VipPerkItem(title: String, desc: String) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WriteReviewDialog(
     services: List<SpaService>,
@@ -494,20 +506,32 @@ fun WriteReviewDialog(
                     style = MaterialTheme.typography.labelMedium.copy(color = LightGrayText)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = selectedService,
-                    onValueChange = { selectedService = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RosePinkPrimary,
-                        unfocusedBorderColor = PlumBorder,
-                        focusedTextColor = SoftWhite,
-                        unfocusedTextColor = SoftWhite,
-                        focusedContainerColor = PlumCard,
-                        unfocusedContainerColor = PlumCard
-                    )
-                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.testTag("review_service_picker")
+                ) {
+                    services.forEach { svc ->
+                        val isSel = svc.title == selectedService
+                        Surface(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedService = svc.title },
+                            color = if (isSel) RosePinkPrimary else PlumCard,
+                            border = BorderStroke(1.dp, if (isSel) GoldAccent else PlumBorder),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = svc.title,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSel) SoftWhite else LightGrayText
+                                ),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -543,7 +567,7 @@ fun WriteReviewDialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Privacy Note: Your phone number is masked (e.g. +91 98XXX XXXXX)",
+                        text = "Privacy Note: Your phone number is masked (e.g. +91 98****1234)",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = ChampagneGold,
                             fontSize = 10.5.sp
