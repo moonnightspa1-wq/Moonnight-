@@ -1,0 +1,159 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.matches('^[a-zA-Z0-9_-]+$') && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // 1. User Profile Validator
+    function isValidUser(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 10 && data.phone.size() <= 20 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
+             (!('isVip' in data) || data.isVip is bool) &&
+             (!('referralCode' in data) || (data.referralCode is string && data.referralCode.size() <= 20));
+    }
+
+    // 2. Booking Validator
+    function isValidBooking(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.serviceId is string && data.serviceId.size() > 0 && data.serviceId.size() <= 50 &&
+             data.serviceTitle is string && data.serviceTitle.size() > 0 && data.serviceTitle.size() <= 100 &&
+             data.durationMinutes is int && (data.durationMinutes == 30 || data.durationMinutes == 60 || data.durationMinutes == 90) &&
+             data.pricePaid is int && data.pricePaid >= 0 && data.pricePaid <= 100000 &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+             data.timeSlot is string && data.timeSlot.size() > 0 && data.timeSlot.size() <= 50 &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.customerPhone is string && data.customerPhone.size() >= 10 && data.customerPhone.size() <= 20 &&
+             data.address is string && data.address.size() > 0 && data.address.size() <= 300 &&
+             (!('specialNotes' in data) || (data.specialNotes is string && data.specialNotes.size() <= 500)) &&
+             data.status in ['CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] &&
+             (!('freeFaceMaskIncluded' in data) || data.freeFaceMaskIncluded is bool) &&
+             (!('isVipBooking' in data) || data.isVipBooking is bool);
+    }
+
+    // 3. Partner Application Validator
+    function isValidPartner(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 10 && data.phone.size() <= 20 &&
+             data.age is int && data.age >= 18 && data.age <= 80 &&
+             data.bio is string && data.bio.size() > 0 && data.bio.size() <= 1000 &&
+             data.experienceYears is int && data.experienceYears >= 0 && data.experienceYears <= 50 &&
+             data.specialty is string && data.specialty.size() > 0 && data.specialty.size() <= 100 &&
+             (!('photoUri' in data) || (data.photoUri is string && data.photoUri.size() <= 500)) &&
+             data.feePaidAmount is int && data.feePaidAmount == 500 &&
+             data.status is string && data.status.size() <= 50;
+    }
+
+    // 4. Customer Review Validator
+    function isValidReview(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.maskedPhone is string && data.maskedPhone.size() > 0 && data.maskedPhone.size() <= 25 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.serviceName is string && data.serviceName.size() > 0 && data.serviceName.size() <= 100 &&
+             data.comment is string && data.comment.size() > 0 && data.comment.size() <= 1000 &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+             (!('isVerified' in data) || data.isVerified is bool);
+    }
+
+    // --- Collection Rules ---
+
+    // Users collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'name', 'phone', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'phone', 'email', 'address', 'isVip', 'referralCode', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidUser(incoming());
+
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUser(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'email', 'address', 'isVip', 'referralCode', 'updatedAt']);
+
+      allow delete: if false;
+
+      // Subcollection: Bookings
+      match /bookings/{bookingId} {
+        allow get: if isOwner(userId) && isValidId(bookingId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(bookingId) &&
+                         incoming().keys().hasAll(['userId', 'serviceId', 'serviceTitle', 'durationMinutes', 'pricePaid', 'date', 'timeSlot', 'customerName', 'customerPhone', 'address', 'status', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'serviceId', 'serviceTitle', 'durationMinutes', 'pricePaid', 'date', 'timeSlot', 'customerName', 'customerPhone', 'address', 'specialNotes', 'status', 'freeFaceMaskIncluded', 'isVipBooking', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidBooking(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(bookingId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidBooking(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'address', 'specialNotes', 'updatedAt']);
+
+        allow delete: if false;
+      }
+    }
+
+    // Partners collection
+    match /partners/{partnerId} {
+      allow get: if isSignedIn() && isValidId(partnerId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn();
+
+      allow create: if isSignedIn() && isValidId(partnerId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'name', 'phone', 'age', 'bio', 'experienceYears', 'specialty', 'feePaidAmount', 'status', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'phone', 'age', 'bio', 'experienceYears', 'specialty', 'photoUri', 'feePaidAmount', 'status', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidPartner(incoming());
+
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Reviews collection (read is public for signed in users, create is restricted to verified author)
+    match /reviews/{reviewId} {
+      allow get: if isSignedIn() && isValidId(reviewId);
+      allow list: if isSignedIn();
+
+      allow create: if isSignedIn() && isValidId(reviewId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'customerName', 'maskedPhone', 'rating', 'serviceName', 'comment', 'date', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'customerName', 'maskedPhone', 'rating', 'serviceName', 'comment', 'date', 'isVerified', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidReview(incoming());
+
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

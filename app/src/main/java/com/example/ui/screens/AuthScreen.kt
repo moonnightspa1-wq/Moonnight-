@@ -86,6 +86,17 @@ import com.example.ui.theme.VerifiedGreen
 import com.example.ui.theme.WineDark
 import kotlinx.coroutines.delay
 
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import com.example.ui.components.attemptAutoSignIn
+import com.example.ui.components.onGoogleSignInClicked
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.auth
+
 private enum class AuthStep {
     PHONE_INPUT,
     OTP_VERIFY
@@ -94,6 +105,7 @@ private enum class AuthStep {
 @Composable
 fun AuthScreen(
     onAuthenticated: (name: String, phone: String, otp: String) -> Boolean,
+    onGoogleAuthenticated: (FirebaseUser) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var step by remember { mutableStateOf(AuthStep.PHONE_INPUT) }
@@ -104,7 +116,23 @@ fun AuthScreen(
     var countdown by remember { mutableIntStateOf(30) }
     var isTimerActive by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = remember { CredentialManager.create(context) }
+    var isGoogleLoading by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        attemptAutoSignIn(
+            context = context,
+            credentialManager = credentialManager,
+            onAuthSuccess = {
+                Firebase.auth.currentUser?.let { onGoogleAuthenticated(it) }
+            },
+            onUnauthenticated = {},
+            scope = this
+        )
+    }
 
     LaunchedEffect(isTimerActive, countdown) {
         if (isTimerActive && countdown > 0) {
@@ -195,7 +223,7 @@ fun AuthScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Enter your mobile number to receive an instant 6-digit secure verification code.",
+                            text = "Sign in with Google for instant VIP access, or verify your mobile number with a 6-digit code.",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = LightGrayText,
                                 textAlign = TextAlign.Center,
@@ -204,6 +232,90 @@ fun AuthScreen(
                         )
 
                         Spacer(modifier = Modifier.height(20.dp))
+
+                        // Visible Google Sign-In Button
+                        Button(
+                            onClick = {
+                                isGoogleLoading = true
+                                onGoogleSignInClicked(
+                                    context = context,
+                                    credentialManager = credentialManager,
+                                    onAuthSuccess = {
+                                        isGoogleLoading = false
+                                        Firebase.auth.currentUser?.let { onGoogleAuthenticated(it) }
+                                    },
+                                    onAuthError = { err ->
+                                        isGoogleLoading = false
+                                        errorMessage = err
+                                    },
+                                    scope = coroutineScope,
+                                    onAuthCancelled = {
+                                        isGoogleLoading = false
+                                    }
+                                )
+                            },
+                            enabled = !isGoogleLoading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PlumSurface,
+                                contentColor = SoftWhite
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.2.dp, GoldAccent),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .testTag("google_sign_in_button")
+                        ) {
+                            if (isGoogleLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(22.dp),
+                                    color = ChampagneGold,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "G",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Black,
+                                            color = ChampagneGold
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "Sign in with Google",
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = SoftWhite
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        // Divider
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = PlumBorder)
+                            Text(
+                                text = "  OR VERIFY PHONE  ",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = BlushPinkAccent,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                )
+                            )
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = PlumBorder)
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
 
                         // Full Name Input
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -336,7 +448,7 @@ fun AuthScreen(
                                 )
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
 
                     } else {

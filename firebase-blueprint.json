@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with contact details and VIP membership status",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Unique user ID matching auth.uid" },
+        "name": { "type": "string", "description": "User full name" },
+        "phone": { "type": "string", "description": "User mobile phone number" },
+        "email": { "type": "string", "description": "User email address (optional)" },
+        "address": { "type": "string", "description": "Primary spa service home address" },
+        "isVip": { "type": "boolean", "description": "VIP Elite Membership indicator" },
+        "referralCode": { "type": "string", "description": "User unique referral invite code" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp via server timestamp" }
+      },
+      "required": ["userId", "name", "phone", "createdAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Scheduled in-home spa service appointment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Booking document ID" },
+        "userId": { "type": "string", "description": "Customer user ID" },
+        "serviceId": { "type": "string", "description": "Spa service identifier" },
+        "serviceTitle": { "type": "string", "description": "Spa service title" },
+        "durationMinutes": { "type": "integer", "enum": [30, 60, 90], "description": "Duration in minutes" },
+        "pricePaid": { "type": "integer", "description": "Amount paid in INR" },
+        "date": { "type": "string", "description": "Selected service date" },
+        "timeSlot": { "type": "string", "description": "Selected appointment time slot" },
+        "customerName": { "type": "string", "description": "Customer name" },
+        "customerPhone": { "type": "string", "description": "Customer contact phone" },
+        "address": { "type": "string", "description": "Home service address" },
+        "specialNotes": { "type": "string", "description": "Special instructions or therapist preferences" },
+        "status": { "type": "string", "enum": ["CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"], "description": "Appointment status" },
+        "freeFaceMaskIncluded": { "type": "boolean", "description": "Whether promotional free face mask is included" },
+        "isVipBooking": { "type": "boolean", "description": "Whether booked under VIP membership benefits" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Booking creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Booking update timestamp" }
+      },
+      "required": ["userId", "serviceId", "serviceTitle", "durationMinutes", "pricePaid", "date", "timeSlot", "customerName", "customerPhone", "address", "status", "createdAt"]
+    },
+    "FemalePartnerApplication": {
+      "title": "FemalePartnerApplication",
+      "description": "Registration application for female spa therapists",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Partner application document ID" },
+        "userId": { "type": "string", "description": "Applicant user UID" },
+        "name": { "type": "string", "description": "Therapist full name" },
+        "phone": { "type": "string", "description": "Therapist phone number" },
+        "age": { "type": "integer", "description": "Therapist age (must be 18+)" },
+        "bio": { "type": "string", "description": "Therapist background/bio" },
+        "experienceYears": { "type": "integer", "description": "Years of professional spa experience" },
+        "specialty": { "type": "string", "description": "Preferred treatment specialty" },
+        "photoUri": { "type": "string", "description": "Photo URI or placeholder" },
+        "feePaidAmount": { "type": "integer", "description": "Partner onboarding fee in INR (500)" },
+        "status": { "type": "string", "description": "Verification status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Submission timestamp" }
+      },
+      "required": ["userId", "name", "phone", "age", "bio", "experienceYears", "specialty", "feePaidAmount", "status", "createdAt"]
+    },
+    "CustomerReview": {
+      "title": "CustomerReview",
+      "description": "Verified customer review and rating for home spa treatments",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Review document ID" },
+        "userId": { "type": "string", "description": "Reviewer user UID" },
+        "customerName": { "type": "string", "description": "Customer display name" },
+        "maskedPhone": { "type": "string", "description": "Customer masked phone number" },
+        "rating": { "type": "integer", "description": "Review rating (1 to 5 stars)" },
+        "serviceName": { "type": "string", "description": "Reviewed spa service name" },
+        "comment": { "type": "string", "description": "Review text feedback" },
+        "date": { "type": "string", "description": "Human-readable review date" },
+        "isVerified": { "type": "boolean", "description": "Verified customer badge" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Review creation timestamp" }
+      },
+      "required": ["userId", "customerName", "maskedPhone", "rating", "serviceName", "comment", "date", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User private profile and VIP status"
+    },
+    "/users/{userId}/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "User scheduled spa appointments"
+    },
+    "/partners/{partnerId}": {
+      "schema": { "$ref": "#/entities/FemalePartnerApplication" },
+      "description": "Female therapist partner applications"
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/CustomerReview" },
+      "description": "Customer verified reviews"
+    }
+  }
+}

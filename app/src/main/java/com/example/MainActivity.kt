@@ -25,6 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import com.example.ui.components.signOut
 import com.example.model.AppNavTab
 import com.example.ui.components.BookingConfirmationDialog
 import com.example.ui.components.BookingDialog
@@ -74,6 +78,9 @@ fun MoonnightApp(viewModel: SpaViewModel) {
     val showLoginModal by viewModel.showLoginModal.collectAsStateWithLifecycle()
     val showReviewModal by viewModel.showReviewModal.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = remember { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(snackbarMessage) {
@@ -83,9 +90,12 @@ fun MoonnightApp(viewModel: SpaViewModel) {
         }
     }
 
-    // Authentication Gate: Require phone & 6-digit OTP verification on fresh app startup
+    // Authentication Gate: Require authentication on fresh app startup
     if (!userSession.isLoggedIn) {
         AuthScreen(
+            onGoogleAuthenticated = { user ->
+                viewModel.onGoogleSignInSuccess(user)
+            },
             onAuthenticated = { name, phone, otp ->
                 viewModel.verifyAndLoginWithOtp(name, phone, otp)
             }
@@ -189,7 +199,14 @@ fun MoonnightApp(viewModel: SpaViewModel) {
                                 onCopyReferral = {
                                     viewModel.showSnackbar("Copied referral link: https://moonnight.spa/invite?code=${userSession.referralCode}")
                                 },
-                                onLogout = { viewModel.logout() }
+                                onLogout = {
+                                    signOut(
+                                        context = context,
+                                        credentialManager = credentialManager,
+                                        onSignOutComplete = { viewModel.logout() },
+                                        scope = coroutineScope
+                                    )
+                                }
                             )
                         }
                     }
