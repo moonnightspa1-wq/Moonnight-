@@ -1,0 +1,8 @@
+{
+  "name": "Moonnight",
+  "description": "Luxury in-home spa & massage services with verified female therapists, instant booking, and VIP membership.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
